@@ -15,22 +15,104 @@ class App():
         root.config(menu=self.m_menu_bar)
 
         # create main frame
-        self.m_main_frame = tk.Frame()
+        self.m_main_frame = tk.Frame(root)
         self.m_main_frame.pack(expand=tk.YES, fill=tk.BOTH)
 
-        table = ttk.Treeview(self.m_main_frame, columns=('name', 'ip', 'delay'))
+        table = ttk.Treeview(self.m_main_frame, columns=('name', 'ip', 'delay', 'lost', 'average'))
         table.column('name', width=100, anchor='center')
         table.column('ip', width=300, anchor='center')
         table.column('delay', width=100, anchor='center')
+        table.column('lost', width=100, anchor='center')
+        table.column('average', width=100, anchor='center')
+
         table.heading('name', text='VPN线路')
         table.heading('ip', text='IP地址')
         table.heading('delay', text='延迟')
+        table.heading('lost', text='丢包率')
+        table.heading('average', text='平均延迟')
+
         table.pack(expand=tk.YES, fill=tk.BOTH)
 
-        for i in range(10):
-            table.insert('', i, values=("xunda", "j1.xunda.com", "98 ms"))
+        configs = []
+        f = open("config.txt")
+        for line in f:
+            a = line.split()
+            configs.append(a)
+        f.close()
 
-        self.m_task = Task()
+        button = tk.Button(self.m_main_frame, text="start", command=self.on_button_clicked)
+        button.pack()
+
+        import threading
+        self.m_mutex = threading.Lock()
+
+        self.m_table = table
+
+        self.m_tasks = {}
+        i = 0
+        for config in configs:
+            name = config[0]
+            addr = config[1]
+            item = table.insert('', i, values=(name, addr, "-", "-"))
+
+            #task = Task(addr, self.on_update_task_info)
+            #task.start()
+
+            #self.m_tasks[task] = item
+            i += 1
+
+
+
+    def on_update_task_info(self, task, ping_value, lost_value, average_value):
+        #self.m_mutex.acquire()
+        item = self.m_tasks[task]
+
+        children = self.m_table.get_children()
+        for child in children:
+            if item == child:
+                self.m_table.set(child, "delay", ping_value)
+                self.m_table.set(child, "lost", lost_value)
+                self.m_table.set(child, "average", average_value)
+                break
+        #self.m_mutex.release()
+
+    def on_button_clicked(self):
+        i = 0
+        children = self.m_table.get_children()
+        for child in children:
+            a = self.m_table.item(child)
+            addr = a["values"][1]
+
+            delay = i * 0.45
+            task = Task(i, addr, delay, self.on_update_task_info)
+            task.start()
+
+            self.m_mutex.acquire()
+            self.m_tasks[task] = child
+            self.m_mutex.release()
+
+            i += 1
+
+            #import time
+            #time.sleep(0.2)
+
+        import threading
+        self.m_thread = threading.Thread(target=self.thread_func, args=[self])
+        self.m_thread.setDaemon(True)
+        self.m_thread.start()
+
+    @staticmethod
+    def thread_func(p):
+        while True:
+            p.m_mutex.acquire()
+            for task in p.m_tasks:
+                child = p.m_tasks[task]
+                delay, lost, average = task.get_info()
+                p.on_update_task_info(task, delay, lost, average)
+            p.m_mutex.release()
+
+            import time
+            time.sleep(1)
 
 
     def process_directory(self, parent, path):

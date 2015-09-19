@@ -152,7 +152,7 @@ def send_one_ping(my_socket, dest_addr, ID):
     my_socket.sendto(packet, (dest_addr, 1)) # Don't know about the 1
 
 
-def do_one(dest_addr, timeout):
+def do_one(tid, dest_addr, timeout):
     """
     Returns either the delay (in seconds) or none on timeout.
     """
@@ -169,7 +169,8 @@ def do_one(dest_addr, timeout):
             raise socket.error(msg)
         raise # raise the original error
 
-    my_ID = os.getpid() & 0xFFFF
+    #my_ID = os.getpid() & 0xFFFF
+    my_ID = tid & 0xFFFF
 
     send_one_ping(my_socket, dest_addr, my_ID)
     delay = receive_one_ping(my_socket, my_ID, timeout)
@@ -197,6 +198,20 @@ def verbose_ping(dest_addr, timeout = 2, count = 4):
             delay  =  delay * 1000
             print "get ping in %0.4fms" % delay
     print
+
+
+def do_ping(tid, dest_addr, timeout=2):
+    try:
+        delay = do_one(tid, dest_addr, timeout)
+    except socket.gaierror, e:
+        #raise "failed. (socket error: '%s')" % e[1]
+        return -1
+
+    if delay == None:
+        #raise "failed. (timeout within %ssec.)" % timeout
+        return -2
+    else:
+        return int(delay * 1000)
 
 
 if __name__ == '__main__':
