@@ -5,13 +5,20 @@ import os
 import Tkinter as tk
 import ttk
 
+from task import Task
 
-class App(tk.Frame):
-    def __init__(self, master):
-        tk.Frame.__init__(self, master)
-        self.pack(expand=tk.YES, fill=tk.BOTH)
 
-        table = ttk.Treeview(self, columns=('name', 'ip', 'delay'))
+class App():
+    def __init__(self, root):
+        # create menu
+        self.m_menu_bar = create_menu(root)
+        root.config(menu=self.m_menu_bar)
+
+        # create main frame
+        self.m_main_frame = tk.Frame()
+        self.m_main_frame.pack(expand=tk.YES, fill=tk.BOTH)
+
+        table = ttk.Treeview(self.m_main_frame, columns=('name', 'ip', 'delay'))
         table.column('name', width=100, anchor='center')
         table.column('ip', width=300, anchor='center')
         table.column('delay', width=100, anchor='center')
@@ -22,6 +29,8 @@ class App(tk.Frame):
 
         for i in range(10):
             table.insert('', i, values=("xunda", "j1.xunda.com", "98 ms"))
+
+        self.m_task = Task()
 
 
     def process_directory(self, parent, path):
@@ -57,30 +66,39 @@ def t():
     root.mainloop()
 
 
+def donothing():
+    pass
+
+
+def open_config():
+    print("111")
+    pass
+
+
 def create_menu(root):
     menu = tk.Menu(root)
 
     file_menu = tk.Menu(menu, tearoff=0)
-    file_menu.add_command(label = "Quit", command=root.quit)
+    file_menu.add_command(label="Open Config...", command=open_config)
+    file_menu.add_separator()
+    file_menu.add_command(label="Quit", command=root.quit)
     menu.add_cascade(label="File", menu=file_menu)
+
+    help_menu = tk.Menu(menu, tearoff=0)
+    help_menu.add_command(label="Help", command=donothing)
+    menu.add_cascade(label="Help", menu=help_menu)
 
     return menu
 
 
 def main():
-    if False:
-        t()
-    else:
-        root = tk.Tk()
-        root.title("Super PING")
-        root.geometry('640x480')
+    root = tk.Tk()
+    root.title("Super PING")
+    root.geometry('640x480')
 
-        menubar = create_menu(root)
-        root.config(menu=menubar)
+    app = App(root)
 
-        app = App(root)
-
-        root.mainloop()
+    root.mainloop()
 
 
 if __name__ == '__main__':
