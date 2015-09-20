@@ -7,7 +7,6 @@ import ttk
 
 from task import Task
 
-
 class App():
     def __init__(self, root):
         # create menu
@@ -36,6 +35,8 @@ class App():
         configs = []
         f = open("config.txt")
         for line in f:
+            if line[0] == '#':
+                continue
             a = line.split()
             configs.append(a)
         f.close()

@@ -1,4 +1,6 @@
 MSGO网站 msgo.bandainamco-ol.jp
+conoha conoha.rayriver.info
+linode linode.rayriver.info
 日本1(ODN)	jp1.lava.4dq.com	Yes	No	75%
 日本2(ODN)	jp2.lava.4dq.com	Yes	No	70%
 日本3(ODN)	jp3.lava.4dq.com	Yes	No	64%
