@@ -1,1 +1,0 @@
-E:\lib\Python27_32\python.exe setup.py py2exe
