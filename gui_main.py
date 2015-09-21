@@ -12,7 +12,7 @@ class DataTable(QTableWidget):
         super(DataTable, self).__init__(parent)
         self.setColumnCount(5)
         self.setRowHeight(10, 10)
-        self.setHorizontalHeaderItem(0, QTableWidgetItem(QString(u'名字')))
+        self.setHorizontalHeaderItem(0, QTableWidgetItem(self.tr('name')))
         self.setHorizontalHeaderItem(1, QTableWidgetItem(self.tr('address')))
         self.setHorizontalHeaderItem(2, QTableWidgetItem(self.tr('delay')))
         self.setHorizontalHeaderItem(3, QTableWidgetItem(self.tr('lost')))
@@ -26,6 +26,7 @@ class DataTable(QTableWidget):
         configs = self.configs
         f = open(file_name, "r")
         for line in f:
+            line = line.decode('utf8')
             if line[0] == '#':
                 continue
             a = line.split()
