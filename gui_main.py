@@ -7,17 +7,134 @@ from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
 
-class DataTable(QTableWidget):
+class TreeItem:
+    def __init__(self, data, parent=None):
+        self.m_parent_item = parent
+        self.m_item_data = data
+        self.m_child_items = []
+
+    def append_child(self, item):
+        self.m_child_items.append(item)
+
+    def child_count(self):
+        return len(self.m_child_items)
+
+    def column_count(self):
+        return len(self.m_item_data)
+
+    def child(self, row):
+        return self.m_child_items[row]
+
+    def data(self, column):
+        try:
+            return self.m_item_data[column]
+        except IndexError:
+            return None
+
+    def parent(self):
+        return self.m_parent_item
+
+    def row(self):
+        if self.m_parent_item:
+            return self.m_parent_item.childItems.index(self)
+
+        return 0
+
+
+class TreeModel(QAbstractItemModel):
+    def __init__(self, data, parent=None):
+        super(TreeModel, self).__init__(parent)
+        self.m_root_item = TreeItem(("name", "address", "delay", "lost", "average"))
+        self.setup_model_data(data, self.m_root_item)
+
+    def setup_model_data(self, data, parent):
+        configs = []
+        f = open(data, "r")
+        for line in f:
+            line = line.decode('utf8')
+            if line[0] == '#':
+                continue
+            a = line.split()
+            configs.append(a)
+        f.close()
+
+        i = 0
+        for config in configs:
+            name = config[0]
+            address = config[1]
+            parent.append_child(TreeItem((name, address, "-", "-", "-"), parent))
+            i += 1
+
+    def index(self, row, column, parent):
+        if not self.hasIndex(row, column, parent):
+            return QModelIndex()
+
+        if not parent.isValid():
+            parent_item = self.m_root_item
+        else:
+            parent_item = parent.internalPointer()
+
+        child_item = parent_item.child(row)
+        if child_item:
+            return self.createIndex(row, column, child_item)
+        else:
+            return QModelIndex()
+
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+
+        if role != Qt.DisplayRole:
+            return None
+
+        item = index.internalPointer()
+
+        return item.data(index.column())
+
+    def parent(self, index):
+        if not index.isValid():
+            return QModelIndex()
+
+        child_item = index.internalPointer()
+        parent_item = child_item.parent()
+
+        if parent_item == self.m_root_item:
+            return QModelIndex()
+
+        return self.createIndex(parent_item.row(), 0, parent_item)
+
+    def columnCount(self, parent):
+        if parent.isValid():
+            return parent.internalPointer().columnCount()
+        else:
+            return self.m_root_item.column_count()
+
+    def rowCount(self, parent):
+        if parent.column() > 0:
+            return 0
+
+        if not parent.isValid():
+            parent_item = self.m_root_item
+        else:
+            parent_item = parent.internalPointer()
+
+        return parent_item.child_count()
+
+class DataTable(QTreeView):
     def __init__(self, parent=None):
         super(DataTable, self).__init__(parent)
+
+        model = TreeModel("config.txt")
+        self.setModel(model)
+
+        return
+
         self.setColumnCount(5)
-        self.setRowHeight(10, 10)
-        self.setHorizontalHeaderItem(0, QTableWidgetItem(self.tr('name')))
-        self.setHorizontalHeaderItem(1, QTableWidgetItem(self.tr('address')))
-        self.setHorizontalHeaderItem(2, QTableWidgetItem(self.tr('delay')))
-        self.setHorizontalHeaderItem(3, QTableWidgetItem(self.tr('lost')))
-        self.setHorizontalHeaderItem(4, QTableWidgetItem(self.tr('average')))
-        self.verticalHeader().setVisible(False)
+        self.setHeaderItem(0, QTreeWidgetItem(self.tr('name')))
+        self.setHeaderItem(1, QTreeWidgetItem(self.tr('address')))
+        self.setHeaderItem(2, QTreeWidgetItem(self.tr('delay')))
+        self.setHeaderItem(3, QTreeWidgetItem(self.tr('lost')))
+        self.setHeaderItem(4, QTreeWidgetItem(self.tr('average')))
         self.setShowGrid(False)
 
         self.configs = []
@@ -59,13 +176,13 @@ class MainWindow(QMainWindow):
         layout = self.create_center_widget()
 
         table = DataTable()
-        table.load_data("config.txt")
+        #table.load_data("config.txt")
         layout.addWidget(table)
 
-        button = QPushButton("Quit")
-        button.resize(100, 50)
-        QObject.connect(button, SIGNAL("clicked()"), QtGui.qApp, SLOT("quit()"))
-        layout.addWidget(button)
+        #button = QPushButton("Quit")
+        #button.resize(100, 50)
+        #QObject.connect(button, SIGNAL("clicked()"), QtGui.qApp, SLOT("quit()"))
+        #layout.addWidget(button)
 
         self.setGeometry(300, 300, 300, 200)
         self.setWindowTitle("title")
